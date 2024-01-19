@@ -6,6 +6,9 @@ import 'package:flash_chat/screens/chat_screen.dart';
 
 import 'package:flash_chat/constants.dart';
 import 'package:flash_chat/components/rounded_button.dart';
+import 'package:flash_chat/components/email_text_field.dart';
+import 'package:flash_chat/components/password_text_field.dart';
+import 'package:flash_chat/components/my_utils.dart';
 
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
@@ -21,79 +24,50 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _auth = FirebaseAuth.instance;
   String email = '';
-  late String password;
+  String password = '';
   // Código repetido abaixo:
   bool showSpinner = false;
   bool hidePassword = true;
   TextEditingController emailTextFieldController = TextEditingController();
   TextEditingController passwordTextFieldController = TextEditingController();
   IconData passwordButtonIcon = Icons.visibility;
-  int passwordlength = 0;
-  IconData passwordWarningIcon = Icons.check_box_outline_blank_rounded;
   bool isLoginButtonEnable = false;
-  List<Widget> passwordWarningList = [const SizedBox()];
-
-  void passWordLengthWarning() {
-    Widget passwordWarning;
-    if (passwordlength > 0 && passwordlength < 6) {
-      passwordWarning = const Text(
-        'At least 6 characters',
-        style: kPasswordLessThansixCharacters,
-      );
-      passwordWarningList.clear();
-      passwordWarningList.add(passwordWarning);
-      passwordWarningList.add(
-        const Icon(
-          Icons.close_rounded,
-          color: Colors.red,
-        ),
-      );
-    } else if (passwordlength > 5) {
-      passwordWarning = const Text(
-        'At least 6 characters',
-        style: kPasswordEqualOrgreaterThansixCharacters,
-      );
-      passwordWarningList.clear();
-      passwordWarningList.add(passwordWarning);
-      passwordWarningList.add(
-        const Icon(
-          Icons.check,
-          color: Colors.green,
-        ),
-      );
-    } else {
-      passwordWarningList.clear();
-      passwordWarningList.add(const SizedBox());
-    }
-  }
+  List<Widget> credentialUserWarningList = [const SizedBox()];
 
   void loginButtonEnableChecker() {
-    isLoginButtonEnable = (passwordlength > 5 && email != '') ? true : false;
+    isLoginButtonEnable = (password.length > 5 && email != '') ? true : false;
   }
 
-  void goToChatScreenThroughLoginScreenMethod() async {
-    if (isLoginButtonEnable) {
+  void passwordTextFieldCleaner() {
+    password = '';
+    passwordTextFieldController.clear();
+  }
+
+  void tryingToSingnInMethod() async {
+    setState(() {
+      showSpinner = true;
+    });
+    try {
+      final isUserRegistered = await _auth.signInWithEmailAndPassword(
+          email: email, password: password);
+      MyUtils.passwordWarning(
+          password: password,
+          credentialUserWarningList: credentialUserWarningList);
+      Navigator.pushNamed(context, ChatScreen.id);
       setState(() {
-        showSpinner = true;
+        showSpinner = false;
       });
-      try {
-        final isUserRegistered = await _auth.signInWithEmailAndPassword(
-            email: email, password: password);
-        password = '';
-        passwordlength = 0;
-        passWordLengthWarning();
-        Navigator.pushNamed(context, ChatScreen.id);
-              setState(() {
-          showSpinner = false;
-        });
-      } catch (e) {
-        setState(() {
-          showSpinner = false;
-        });
-        // ignore: avoid_print
-        print(e);
-      }
-    } else {}
+      loginButtonEnableChecker();
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        showSpinner = false;
+      });
+      MyUtils.fireAuthErrorHandling(
+          error: e, credentialUserWarningList: credentialUserWarningList);
+      loginButtonEnableChecker();
+      // ignore: avoid_print
+      print(e);
+    }
   }
 
   @override
@@ -120,79 +94,54 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(
                 height: 48.0,
               ),
-              TextField(
-                textInputAction:
-                    TextInputAction.next, // Moves focus to next TextField.
-                controller: emailTextFieldController,
-                cursorColor: Colors.blueAccent,
-                keyboardType: TextInputType.emailAddress,
-                textAlign: TextAlign.center,
+              EmailTextField(
+                textEditingController: emailTextFieldController,
                 onChanged: (value) {
                   setState(() {
                     email = value;
                     loginButtonEnableChecker();
                   });
                 },
-                decoration: kTextFieldDecoration.copyWith(
-                  hintText: 'Enter your email',
-                  suffixIcon: (emailTextFieldController.text.isNotEmpty)
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.cancel,
-                            color: Colors.grey.shade600,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              emailTextFieldController.clear();
-                            });
-                          },
-                        )
-                      : null,
-                ),
               ),
               const SizedBox(
                 height: 8.0,
               ),
-              TextField(
-                controller: passwordTextFieldController,
+              PasswordTextField(
+                textEditingController: passwordTextFieldController,
+                obscureText: hidePassword,
                 onSubmitted: (value) {
-                  goToChatScreenThroughLoginScreenMethod();
+                  tryingToSingnInMethod();
+                  passwordTextFieldCleaner();
                 },
                 onChanged: (value) {
                   password = value;
-                  passwordlength = value.length;
                   if (value.isEmpty) {
                     setState(() {
                       hidePassword = true;
                     });
                   }
-                  loginButtonEnableChecker();
                   setState(() {
-                    passWordLengthWarning();
+                    MyUtils.passwordWarning(
+                        password: password,
+                        credentialUserWarningList: credentialUserWarningList);
+                    loginButtonEnableChecker();
                   });
                 },
-                cursorColor: Colors.blueAccent,
-                keyboardType: TextInputType.visiblePassword,
-                textAlign: TextAlign.center,
-                obscureText: hidePassword,
-                decoration: kTextFieldDecoration.copyWith(
-                  hintText: 'Enter your password',
-                  suffixIcon: (passwordTextFieldController.text.isNotEmpty)
-                      ? GestureDetector(
-                          child: Icon(
-                            hidePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey.shade600,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              hidePassword = !hidePassword;
-                            });
-                          },
-                        )
-                      : null,
-                ),
+                suffixIconButton: (passwordTextFieldController.text.isNotEmpty)
+                    ? GestureDetector(
+                        child: Icon(
+                          hidePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey.shade600,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            hidePassword = !hidePassword;
+                          });
+                        },
+                      )
+                    : null,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -200,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   vertical: 6,
                 ),
                 child: Row(
-                  children: passwordWarningList, // repetido
+                  children: credentialUserWarningList, // repetido
                 ),
               ),
               const SizedBox(
@@ -212,9 +161,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'Log In',
                 onPressed: (isLoginButtonEnable)
                     ? () async {
-                        goToChatScreenThroughLoginScreenMethod();
+                        tryingToSingnInMethod();
+                        passwordTextFieldCleaner();
                       }
                     : null,
+              ),
+              RoundedButton(
+                color: Color.fromARGB(255, 37, 128, 131),
+                label: 'teste \'esqueceu a senha\'',
+                onPressed: () async {
+                  await FirebaseAuth.instance
+                      .sendPasswordResetEmail(email: email);
+                  // ignore: avoid_print
+                },
               ),
             ],
           ),

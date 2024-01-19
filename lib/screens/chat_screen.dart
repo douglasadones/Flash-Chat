@@ -78,12 +78,18 @@ class _ChatScreenState extends State<ChatScreen> {
         leading:
             null, // 'turn back arrow' will become another widget with another funcion
         actions: <Widget>[
-          IconButton(
-              icon: const Icon(Icons.close),
+          Tooltip(
+            message: 'Erase All Messages For Everyone',
+            child: IconButton(
+              icon: const Icon(
+                Icons.delete_forever,
+                size: 25.0,
+              ),
               onPressed: () {
                 fireStoreDocumentsCleaner();
-                // messagesStream();
-              }),
+              },
+            ),
+          ),
         ],
         title: Row(
           children: [

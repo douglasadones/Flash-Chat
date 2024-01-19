@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flash_chat/components/my_utils.dart';
 import 'package:flash_chat/components/rounded_button.dart';
 import 'package:flash_chat/constants.dart';
 import 'package:flash_chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
-import '../components/custom_text_field.dart';
+import '../components/email_text_field.dart';
+import 'package:flash_chat/components/password_text_field.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = 'registration_screen';
@@ -19,75 +21,52 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _auth = FirebaseAuth.instance;
   String email = '';
-  late String password;
+  String password = '';
+  String userName = '';
   bool showSpinner = false;
   bool hidePassword = true;
   IconData passwordButtonIcon = Icons.visibility;
   TextEditingController passwordTextFieldController = TextEditingController();
   TextEditingController emailTextFieldController = TextEditingController();
-  int passwordlength = 0;
-  IconData passwordWarningIcon = Icons.check_box_outline_blank_rounded;
   bool isRegisterButtonEnable = false;
-  List<Widget> passwordWarningList = [const SizedBox()];
+  List<Widget> credentialUserWarningList = [const SizedBox()];
 
-  void passWordLengthWarning() {
-    Widget passwordWarning;
-    if (passwordlength > 0 && passwordlength < 6) {
-      passwordWarning = const Text(
-        'At least 6 characters',
-        style: kPasswordLessThansixCharacters,
-      );
-      passwordWarningList.clear();
-      passwordWarningList.add(passwordWarning);
-      passwordWarningList.add(
-        const Icon(
-          Icons.close_rounded,
-          color: Colors.red,
-        ),
-      );
-    } else if (passwordlength > 5) {
-      passwordWarning = const Text(
-        'At least 6 characters',
-        style: kPasswordEqualOrgreaterThansixCharacters,
-      );
-      passwordWarningList.clear();
-      passwordWarningList.add(passwordWarning);
-      passwordWarningList.add(
-        const Icon(
-          Icons.check,
-          color: Colors.green,
-        ),
-      );
-    } else {
-      passwordWarningList.clear();
-      passwordWarningList.add(const SizedBox());
-    }
+  void passwordTextFieldCleaner() {
+    password = '';
+    passwordTextFieldController.clear();
+    registerButtonEnableChecker();
   }
 
   void registerButtonEnableChecker() {
-    isRegisterButtonEnable = (passwordlength > 5 && email != '') ? true : false;
+    isRegisterButtonEnable =
+        (password.length > 5 && email != '') ? true : false;
   }
 
-  void goToChatScreenThroughRegistrationScreenMethod() async {
-    if (isRegisterButtonEnable) {
+  void tryToRegister() async {
+    setState(() {
+      showSpinner = true;
+    });
+    try {
+      final newUser = await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
+      passwordTextFieldCleaner();
+      MyUtils.passwordWarning(
+          password: password,
+          credentialUserWarningList: credentialUserWarningList);
+      Navigator.pushNamed(context, ChatScreen.id);
       setState(() {
-        showSpinner = true;
+        showSpinner = false;
       });
-      try {
-        final newUser = await _auth.createUserWithEmailAndPassword(
-            email: email, password: password);
-        password = '';
-        passwordlength = 0;
-        passWordLengthWarning();
-        Navigator.pushNamed(context, ChatScreen.id);
-              passwordTextFieldController.clear();
-        setState(() {
-          showSpinner = false;
-        });
-      } catch (e) {
-        print(e);
-      }
-    } else {}
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        showSpinner = false;
+      });
+      passwordTextFieldCleaner();
+      MyUtils.fireAuthErrorHandling(
+          credentialUserWarningList: credentialUserWarningList, error: e);
+      // ignore: avoid_print
+      print(e);
+    }
   }
 
   @override
@@ -114,7 +93,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               const SizedBox(
                 height: 48.0,
               ),
-              LoginTextField(
+              EmailTextField(
                 textEditingController: emailTextFieldController,
                 onChanged: (value) {
                   setState(() {
@@ -126,13 +105,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               const SizedBox(
                 height: 8.0,
               ),
-              TextField(
-                onSubmitted: (value) =>
-                    goToChatScreenThroughRegistrationScreenMethod(),
-                controller: passwordTextFieldController,
+              PasswordTextField(
+                obscureText: hidePassword,
+                textEditingController: passwordTextFieldController,
+                onSubmitted: (value) => tryToRegister(),
                 onChanged: (value) {
                   password = value;
-                  passwordlength = value.length;
                   if (value.isEmpty) {
                     setState(() {
                       hidePassword = true;
@@ -140,31 +118,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   }
                   registerButtonEnableChecker();
                   setState(() {
-                    passWordLengthWarning();
+                    MyUtils.passwordWarning(
+                        password: password,
+                        credentialUserWarningList: credentialUserWarningList);
                   });
                 },
-                cursorColor: Colors.blueAccent,
-                keyboardType: TextInputType.visiblePassword,
-                textAlign: TextAlign.center,
-                obscureText: hidePassword,
-                decoration: kTextFieldDecoration.copyWith(
-                  hintText: 'Enter your password',
-                  suffixIcon: (passwordTextFieldController.text.isNotEmpty)
-                      ? GestureDetector(
-                          child: Icon(
-                            (hidePassword)
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey.shade600,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              hidePassword = !hidePassword;
-                            });
-                          },
-                        )
-                      : null,
-                ),
+                suffixIconButton: (passwordTextFieldController.text.isNotEmpty)
+                    ? GestureDetector(
+                        child: Icon(
+                          (hidePassword)
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey.shade600,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            hidePassword = !hidePassword;
+                          });
+                        },
+                      )
+                    : null,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -172,7 +145,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   vertical: 6,
                 ),
                 child: Row(
-                  children: passwordWarningList,
+                  children: credentialUserWarningList,
                 ),
               ),
               const SizedBox(
@@ -185,7 +158,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 label: 'Register',
                 onPressed: (isRegisterButtonEnable)
                     ? () async {
-                        goToChatScreenThroughRegistrationScreenMethod();
+                        tryToRegister();
                       }
                     : null,
               ),

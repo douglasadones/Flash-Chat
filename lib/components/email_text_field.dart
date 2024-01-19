@@ -1,21 +1,21 @@
 import 'package:flash_chat/constants.dart';
 import 'package:flutter/material.dart';
 
-class LoginTextField extends StatefulWidget {
+class EmailTextField extends StatefulWidget {
   final TextEditingController textEditingController;
   final Function(String)? onChanged;
 
-  const LoginTextField({
+  const EmailTextField({
     super.key,
     required this.textEditingController,
-    this.onChanged,
+    required this.onChanged,
   });
 
   @override
-  State<LoginTextField> createState() => _LoginTextFieldState();
+  State<EmailTextField> createState() => _EmailTextFieldState();
 }
 
-class _LoginTextFieldState extends State<LoginTextField> {
+class _EmailTextFieldState extends State<EmailTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
@@ -26,10 +26,6 @@ class _LoginTextFieldState extends State<LoginTextField> {
       textAlign: TextAlign.center,
       onChanged: (value) {
         widget.onChanged?.call(value);
-        // setState(() {
-        //   email = value;
-        //   registerButtonEnableChecker();
-        // });
       },
       decoration: kTextFieldDecoration.copyWith(
         hintText: 'Enter your email',
