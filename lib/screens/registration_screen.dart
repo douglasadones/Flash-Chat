@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flash_chat/components/my_utils.dart';
 import 'package:flash_chat/components/rounded_button.dart';
-import 'package:flash_chat/constants.dart';
 import 'package:flash_chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
@@ -50,7 +49,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       final newUser = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
       passwordTextFieldCleaner();
-      MyUtils.passwordWarning(
+      MyUtils.passwordErrorHandlingAndUpdateUIWarning(
           password: password,
           credentialUserWarningList: credentialUserWarningList);
       Navigator.pushNamed(context, ChatScreen.id);
@@ -62,7 +61,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         showSpinner = false;
       });
       passwordTextFieldCleaner();
-      MyUtils.fireAuthErrorHandling(
+      MyUtils.fireAuthErrorHandlingAndUpdateUIWarning(
           credentialUserWarningList: credentialUserWarningList, error: e);
       // ignore: avoid_print
       print(e);
@@ -118,7 +117,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   }
                   registerButtonEnableChecker();
                   setState(() {
-                    MyUtils.passwordWarning(
+                    MyUtils.passwordErrorHandlingAndUpdateUIWarning(
                         password: password,
                         credentialUserWarningList: credentialUserWarningList);
                   });

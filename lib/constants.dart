@@ -6,16 +6,16 @@ const kSendButtonTextStyle = TextStyle(
   fontSize: 18.0,
 );
 
-const kMessageTextFieldDecoration = InputDecoration(
-  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-  hintText: 'Type your message here...',
-  border: InputBorder.none,
-);
-
 const kMessageContainerDecoration = BoxDecoration(
   border: Border(
     top: BorderSide(color: Colors.lightBlueAccent, width: 2.0),
   ),
+);
+
+const kMessageTextFieldDecoration = InputDecoration(
+  contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+  hintText: 'Type your message here...',
+  border: InputBorder.none,
 );
 
 const kTextFieldDecoration = InputDecoration(
@@ -42,4 +42,13 @@ const TextStyle kPasswordLessThansixCharacters = TextStyle(
 const TextStyle kPasswordEqualOrgreaterThansixCharacters = TextStyle(
   color: Colors.green,
   fontWeight: FontWeight.w500,
+);
+
+const kforgotPasswordTextFieldDecoration = InputDecoration(
+  enabledBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.blueAccent),
+  ),
+  focusedBorder: UnderlineInputBorder(
+    borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
+  ),
 );

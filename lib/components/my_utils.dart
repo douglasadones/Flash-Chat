@@ -9,11 +9,12 @@ enum IconCheck {
 }
 
 class MyUtils {
-  static void passwordWarning({
+  static void passwordErrorHandlingAndUpdateUIWarning({
     required String password,
     required List<Widget> credentialUserWarningList,
   }) {
     Widget passwordWarning;
+    Widget iconWarning;
     IconCheck suffixIcon;
     if (password.isNotEmpty && password.length < 6) {
       passwordWarning = const Text(
@@ -31,30 +32,29 @@ class MyUtils {
       passwordWarning = const SizedBox();
       suffixIcon = IconCheck.withoutIcon;
     }
-    credentialUserWarningList.clear();
-    credentialUserWarningList.add(passwordWarning);
     switch (suffixIcon) {
       case IconCheck.withCheckIcon:
-        credentialUserWarningList.add(
-          const Icon(
-            Icons.check,
-            color: Colors.green,
-          ),
+        iconWarning = const Icon(
+          Icons.check,
+          color: Colors.green,
         );
         break;
       case IconCheck.withWrongIcon:
-        credentialUserWarningList.add(
-          const Icon(
-            Icons.close_rounded,
-            color: Colors.red,
-          ),
+        iconWarning = const Icon(
+          Icons.close_rounded,
+          color: Colors.red,
         );
       case IconCheck.withoutIcon:
-        credentialUserWarningList.add(const SizedBox());
+        iconWarning = const SizedBox();
     }
+    _updateUIWarning(
+      warningList: credentialUserWarningList,
+      warningText: passwordWarning,
+      warningIcon: iconWarning,
+    );
   }
 
-  static void fireAuthErrorHandling({
+  static void fireAuthErrorHandlingAndUpdateUIWarning({
     required List<Widget> credentialUserWarningList,
     required FirebaseAuthException error,
   }) {
@@ -68,7 +68,7 @@ class MyUtils {
         break;
       case 'too-many-requests':
         warningError = const Text(
-          'Too Many Requests. Try later.',
+          'Too many requests. Try later.',
           style: kPasswordLessThansixCharacters,
         );
         break;
@@ -85,7 +85,21 @@ class MyUtils {
         );
         break;
     }
-    credentialUserWarningList.clear();
-    credentialUserWarningList.add(warningError);
+    _updateUIWarning(
+      warningList: credentialUserWarningList,
+      warningText: warningError,
+    );
+  }
+
+  static void _updateUIWarning({
+    required List<Widget> warningList,
+    required Widget warningText,
+    Widget? warningIcon,
+  }) {
+    warningList.clear();
+    warningList.add(warningText);
+    if (warningIcon != null) {
+      warningList.add(warningIcon);
+    }
   }
 }
