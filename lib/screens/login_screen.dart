@@ -70,22 +70,57 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void trySendResetPasswordEmail() async {
+    if (email != '') {
+      try {
+        final isEmailAlreadyInUse = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: 'password',
+        );
+        isEmailAlreadyInUse.user!.delete();
+        Navigator.of(context).pop();
+        setState(() {
+          credentialUserWarningList.clear();
+          credentialUserWarningList.add(const Text(
+            'Email Not Found',
+            style: kPasswordLessThansixCharacters,
+          ));
+        });
+      } on FirebaseAuthException {
+        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+        Navigator.of(context).pop();
+        emailSentAlertPopUp(context);
+      }
+    } else {
+      Navigator.pop(context);
+      setState(() {
+        credentialUserWarningList.clear();
+        credentialUserWarningList.add(const Text(
+          'Email Not Found',
+          style: kPasswordLessThansixCharacters,
+        ));
+      });
+    }
+  }
+
   Future _forgotPasswordBox(BuildContext context) {
     return showDialog(
       useSafeArea: true,
       context: context,
       builder: (context) => AlertDialog(
-        // titlePadding: const EdgeInsets.all(0),
         surfaceTintColor: Colors.transparent,
+        contentPadding: const EdgeInsets.only(left: 23.0, bottom: 10.0),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
               'Forgot your password?',
               textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 19.0, fontWeight: FontWeight.w500),
             ),
             Flexible(
               child: IconButton(
+                alignment: Alignment.center,
                 icon: const Icon(Icons.close),
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -99,60 +134,20 @@ class _LoginScreenState extends State<LoginScreen> {
             child: TextField(
               cursorColor: Colors.blueAccent,
               decoration: kforgotPasswordTextFieldDecoration.copyWith(
-                  hintText: 'Enter your email'),
+                hintText: 'Enter your email',
+              ),
               onChanged: (value) {
                 email = value;
               },
-              onSubmitted: (value) async {
-                try {
-                  final isEmailAlreadyInUse =
-                      await _auth.createUserWithEmailAndPassword(
-                    email: email,
-                    password: 'password',
-                  );
-                  isEmailAlreadyInUse.user!.delete();
-                  Navigator.of(context).pop();
-                  credentialUserWarningList.clear();
-                  credentialUserWarningList.add(const Text(
-                    'Email Not Found',
-                    style: kPasswordLessThansixCharacters,
-                  ));
-                } on FirebaseAuthException catch (e) {
-                  // ignore: avoid_print
-                  print(e);
-                  await FirebaseAuth.instance
-                      .sendPasswordResetEmail(email: email);
-                  Navigator.of(context).pop();
-                  emailSentAlertPopUp(context);
-                  // setState(() {
-                  //   showSpinner = false;
-                  // });
-                }
-              },
+              onSubmitted: (value) => trySendResetPasswordEmail(),
             ),
           ),
           Center(
             child: RoundedButton(
-                color: Colors.blueAccent,
-                label: 'Send',
-                onPressed: () async {
-                  print(email);
-                  if (email != '') {
-                    // await FirebaseAuth.instance
-                    //     .sendPasswordResetEmail(email: email);
-                    Navigator.of(context).pop();
-                    emailSentAlertPopUp(context);
-                  } else {
-                    Navigator.pop(context);
-                    setState(() {
-                      credentialUserWarningList.clear();
-                      credentialUserWarningList.add(const Text(
-                        'Email Not Found',
-                        style: kPasswordLessThansixCharacters,
-                      ));
-                    });
-                  }
-                }),
+              color: Colors.blueAccent,
+              label: 'Send',
+              onPressed: () => trySendResetPasswordEmail(),
+            ),
           )
         ],
         backgroundColor: Colors.white,
@@ -165,8 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: Colors.white,
           title: const Text(
-            'Password Reset Email Sent',
+            'Password reset email sent',
             textAlign: TextAlign.center,
           ),
           content: const Text(
@@ -178,10 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
               textAlign: TextAlign.justify),
           actions: <Widget>[
             TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
+              child: const Text(
+                'Ok',
+                style: TextStyle(color: Colors.blueAccent, fontSize: 15),
               ),
-              child: const Text('Ok'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -277,29 +274,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 4.0,
               ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Expanded(child: SizedBox()),
-                  Expanded(
-                    child: Center(
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
-                          child: Text(
-                            'Forgot your password?',
-                            style: TextStyle(
-                              color: Colors.grey.shade800,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
+                  // const Expanded(child: SizedBox()),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Text(
+                        'Forgot your password?',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          decoration: TextDecoration.underline,
                         ),
-                        onTap: () {
-                          email = '';
-                          _forgotPasswordBox(context);
-                        },
                       ),
                     ),
+                    onTap: () {
+                      email = '';
+                      _forgotPasswordBox(context);
+                    },
                   ),
                 ],
               ),
@@ -316,19 +309,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           passwordTextFieldCleaner();
                         }
                       : null,
-                ),
-              ),
-              const Center(child: Text('OR')),
-              SizedBox(
-                width: double.infinity,
-                child: RoundedButton(
-                  color: const Color.fromARGB(255, 37, 128, 131),
-                  label: 'teste \'esqueceu a senha\'',
-                  onPressed: () async {
-                    await FirebaseAuth.instance
-                        .sendPasswordResetEmail(email: email);
-                    // ignore: avoid_print
-                  },
                 ),
               ),
             ],

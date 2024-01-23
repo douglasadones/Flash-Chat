@@ -56,7 +56,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 Hero(
                   tag: 'logo',
                   child: SizedBox(
-                    height: 60.0,
+                    height: 50.0,
                     child: Image.asset('images/logo.png'),
                   ),
                 ),
@@ -67,7 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       curve: Curves.decelerate,
                       textStyle: const TextStyle(
                           color: Colors.black,
-                          fontSize: 54.0,
+                          fontSize: 45.0,
                           fontWeight: FontWeight.w900),
                       speed: const Duration(milliseconds: 330),
                     ),
