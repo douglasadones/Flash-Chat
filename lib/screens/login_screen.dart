@@ -39,6 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void passwordTextFieldCleaner() {
+    setState(() {
+      hidePassword = true;
+    });
     password = '';
     passwordTextFieldController.clear();
   }
@@ -86,10 +89,15 @@ class _LoginScreenState extends State<LoginScreen> {
             style: kPasswordLessThansixCharacters,
           ));
         });
-      } on FirebaseAuthException {
-        await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-        Navigator.of(context).pop();
-        emailSentAlertPopUp(context);
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'invalid-email') {
+          MyUtils.fireAuthErrorHandlingAndUpdateUIWarning(
+              credentialUserWarningList: credentialUserWarningList, error: e);
+        } else {
+          await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+          Navigator.of(context).pop();
+          emailSentAlertPopUp(context);
+        }
       }
     } else {
       Navigator.pop(context);
